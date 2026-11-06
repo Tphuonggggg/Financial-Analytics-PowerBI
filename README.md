@@ -76,61 +76,23 @@ Các quan hệ chính là **1-nhiều** từ dimension đến fact.
 
 ### Sơ đồ mô hình dữ liệu
 
-Sơ đồ dưới đây được viết bằng **Mermaid**, nên **hiển thị trực tiếp trên GitHub ngay trong file `README.md`**, không cần lưu thêm ảnh. Mỗi bảng thể hiện các trường chính; các đường nối mô tả khóa liên kết và quan hệ **một–nhiều (1:N)**.
+Sơ đồ dưới đây trình bày **5 bảng dữ liệu** và **4 quan hệ chính (1:N)**. Các node nêu các cột nghiệp vụ tiêu biểu; để dễ theo dõi, phần trình bày chi tiết vai trò của từng bảng nằm ngay bên dưới.
 
 ```mermaid
-erDiagram
-    Dim_Date ||--o{ FCT_KQKD : "Date - Ngay"
-    Dim_Date ||--o{ FCT_LCTT : "Date - Ngay"
-    DIM_KQDK ||--o{ FCT_KQKD : "Ma khoan muc"
-    DIM_LCTT ||--o{ FCT_LCTT : "Ma khoan muc"
+flowchart TB
+    DATE["Dim_Date: Date, Year, Quarter, Month"]
+    KQKD_DIM["DIM_KQDK: Ma khoan muc, Ten, Cap 1-2"]
+    LCTT_DIM["DIM_LCTT: Ma khoan muc, Ten, Hoat dong, Cap 1-3"]
+    KQKD_FACT["FCT_KQKD: Ngay, Ma khoan muc, Gia tri, Ke hoach"]
+    LCTT_FACT["FCT_LCTT: Ngay, Ma khoan muc, Gia tri, Ke hoach"]
 
-    Dim_Date {
-        date Date PK
-        int Year
-        int Quarter
-        int Month_Number
-        string Month_Name
-        int Day
-    }
-
-    DIM_KQDK {
-        string Ma_khoan_muc PK
-        string Ten_khoan_muc
-        string Ma_khoan_muc_cap_1
-        string Ma_khoan_muc_cap_2
-        string Ten_khoan_muc_cap_1
-        string Ten_khoan_muc_cap_2
-    }
-
-    DIM_LCTT {
-        string Ma_khoan_muc PK
-        string Ten_khoan_muc
-        string Hoat_dong
-        string Ma_khoan_muc_cap_1
-        string Ma_khoan_muc_cap_2
-        string Ma_khoan_muc_cap_3
-        string Ten_khoan_muc_cap_1
-        string Ten_khoan_muc_cap_2
-        int STT_hoat_dong
-    }
-
-    FCT_KQKD {
-        date Ngay FK
-        string Ma_khoan_muc FK
-        string Khoan_muc
-        number Gia_tri
-        number Ke_hoach
-    }
-
-    FCT_LCTT {
-        date Ngay FK
-        string Ma_khoan_muc FK
-        string Khoan_muc
-        number Gia_tri
-        number Ke_hoach
-    }
+    DATE -->|"Date to Ngay - 1:N"| KQKD_FACT
+    DATE -->|"Date to Ngay - 1:N"| LCTT_FACT
+    KQKD_DIM -->|"Ma khoan muc - 1:N"| KQKD_FACT
+    LCTT_DIM -->|"Ma khoan muc - 1:N"| LCTT_FACT
 ```
+
+> Trong mô hình Power BI, `Dim_Date` là bảng thời gian dùng chung. Mỗi bảng danh mục chỉ liên kết với bảng fact tương ứng; hướng lọc chính là **dimension → fact**. Tên trường trên sơ đồ không dấu để tăng tính tương thích khi hiển thị Mermaid trên GitHub.
 
 **Giải thích mô hình:**
 
@@ -143,6 +105,8 @@ erDiagram
 | `FCT_LCTT` | Fact lưu chuyển tiền tệ (**408 dòng, 24 kỳ**) | Giá trị thực tế và kế hoạch của các khoản thu, chi, dòng tiền |
 
 **Quan hệ:** `Dim_Date[Date]` kết nối với cột `Ngày` của cả hai fact; mỗi dimension danh mục kết nối với fact tương ứng qua `Mã khoản mục`. Các quan hệ chính là **1:N**, hướng lọc **dimension → fact**. Các dòng tổng hợp và chi tiết cần được tính theo đúng cấp khoản mục để tránh cộng chồng khi tạo KPI.
+
+> **Lưu ý:** Các nhãn trong sơ đồ Mermaid được rút gọn và viết không dấu để tăng tính tương thích; tên cột thực tế trong Power BI vẫn là tiếng Việt như `Ngày`, `Mã khoản mục`, `Giá trị`, `Kế hoạch`.
 
 ### 3.3. DAX và logic phân tích
 
@@ -158,12 +122,14 @@ DAX được sử dụng để hỗ trợ:
 
 ```mermaid
 flowchart LR
-    A["Excel 2024–2025"] --> B["Power Query<br/>Gộp và làm sạch"]
-    B --> C["Mô hình dữ liệu<br/>2 Fact + 3 Dimension"]
-    C --> D["DAX Measures"]
-    D --> E["4 trang dashboard<br/>Power BI"]
-    E --> F["Insight & Recommendation"]
+    A["Excel sources 2024-2025"] --> B["Power Query: combine and clean"]
+    B --> C["Data model: 2 facts and 3 dimensions"]
+    C --> D["DAX: KPIs and comparisons"]
+    D --> E["Power BI: 4 dashboard pages"]
+    E --> F["Financial insights and recommendations"]
 ```
+
+Quy trình tương ứng: **Thu thập dữ liệu Excel → Làm sạch và chuẩn hóa → Mô hình hóa dữ liệu → Xây dựng DAX → Trực quan hóa → Phân tích và đề xuất**.
 
 ---
 
@@ -183,6 +149,7 @@ Báo cáo Power BI gồm **4 trang dashboard tương tác**, cho phép lọc the
 - **Tiền thu** đạt **102,38%** kế hoạch.
 - **Tiền chi** đạt **105,30%** kế hoạch.
 - Cần lưu ý rằng với khoản mục chi phí hoặc chi tiền, tỷ lệ vượt 100% **không phải lúc nào cũng là tín hiệu tích cực**.
+
 ---
 
 ## 5. Insight nổi bật: Vấn đề → Phân tích → Hướng xử lý
@@ -227,3 +194,4 @@ Các insight dưới đây được rút ra từ báo cáo dự án. Phần “h
 - Export toàn bộ dashboard thành ảnh để tăng tính trực quan trên GitHub.
 - Bổ sung data dictionary ngắn gọn cho các bảng và measure quan trọng.
 
+---
